@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#0f172a">
     <title>AFIS Mobile · Coleta de Campo</title>
 
+    <!-- Manifesto e Ícones PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815428.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -431,4 +435,72 @@
             }
         }
 
-        async
+        async function enviarCompartilhamentoNativo() {
+            const nome = document.getElementById('campo-nome').value.trim();
+            if (!nome) {
+                alert('Informe o nome do periciando / cadáver.');
+                return;
+            }
+            if (anexos.length === 0) {
+                alert('Adicione ao menos uma foto ou documento.');
+                return;
+            }
+
+            const guia = document.getElementById('campo-guia').value.trim() || 'S/N';
+            const bo = document.getElementById('campo-bo').value.trim() || 'S/N';
+            const tituloAssunto = `[AFIS] ${modalidadeAtual} - ${nome.toUpperCase()}`;
+            const textoCorpo = `Atendimento Pericial (${modalidadeAtual}):\n- Periciando: ${nome.toUpperCase()}\n- Guia: ${guia} | BO: ${bo}\n- Arquivos: ${anexos.length} anexo(s)`;
+
+            const arquivosParaEnvio = anexos.map(a => a.file);
+
+            if (navigator.canShare && navigator.canShare({ files: arquivosParaEnvio })) {
+                try {
+                    await navigator.share({
+                        title: tituloAssunto,
+                        text: textoCorpo,
+                        files: arquivosParaEnvio
+                    });
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn(e);
+                }
+            } else {
+                alert('Compartilhamento de arquivos não suportado neste navegador. Use o envio para o Google Drive.');
+            }
+        }
+
+        function abrirConfig() {
+            document.getElementById('modal-config').classList.remove('hidden');
+        }
+
+        function fecharConfig() {
+            document.getElementById('modal-config').classList.add('hidden');
+        }
+
+        function salvarConfig() {
+            const url = document.getElementById('input-drive-url').value.trim();
+            if (url) {
+                localStorage.setItem('afis_drive_webhook_url', url);
+                fecharConfig();
+                alert('Configuração salva com sucesso!');
+            }
+        }
+
+        function limparTudo() {
+            anexos.forEach(a => URL.revokeObjectURL(a.url));
+            anexos = [];
+            document.getElementById('campo-nome').value = '';
+            document.getElementById('campo-guia').value = '';
+            document.getElementById('campo-bo').value = '';
+            document.getElementById('campo-obs').value = '';
+            renderizarGaleria();
+        }
+
+        // Registo do Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(console.warn);
+            });
+        }
+    </script>
+</body>
+</html>
