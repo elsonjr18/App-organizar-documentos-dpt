@@ -1,0 +1,6 @@
+{
+  "name": "AFIS Forense — Ecossistema Papiloscópico (DPT/BA)",
+  "description": "Ecossistema de confronto papiloscópico/necropapiloscópico (AFIS Desktop) e coleta de vestígios em campo offline-first (AFIS Mobile PWA).",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
