@@ -42,7 +42,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
-                <!-- Botão de Instalação Dinâmico -->
                 <button id="btn-instalar-pwa" onclick="instalarApp()" class="hidden px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-md active:scale-95 transition">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i> Instalar
                 </button>
@@ -52,12 +51,12 @@
             </div>
         </div>
 
-        <!-- Abas de Navegação Rápida -->
+        <!-- Abas de Navegação -->
         <div class="px-4 pb-2.5 max-w-md mx-auto w-full grid grid-cols-2 gap-2">
             <button type="button" id="tab-btn-coleta" onclick="alternarAba('COLETA')"
                 class="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white shadow-md shadow-blue-600/25">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>+ Nova Coleta</span>
+                <span id="tab-coleta-rotulo">+ Nova Coleta</span>
             </button>
             <button type="button" id="tab-btn-historico" onclick="alternarAba('HISTORICO')"
                 class="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-slate-800/80 text-slate-300 border border-slate-700/80 hover:text-white">
@@ -68,45 +67,93 @@
         </div>
     </header>
 
-    <!-- Conteúdo Principal -->
     <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
 
-        <!-- Banner de Status Offline -->
+        <!-- Banner Offline -->
         <div id="banner-offline" class="hidden bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-xl flex items-center gap-2 text-amber-300 text-xs font-medium">
             <i data-lucide="wifi-off" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
             <span>Você está offline. Os atendimentos serão salvos no banco local do aparelho (IndexedDB).</span>
         </div>
 
-        <!-- ABA 1: NOVA COLETA -->
+        <!-- Banner de Edição Ativa de Caso -->
+        <div id="banner-modo-edicao" class="hidden bg-amber-600/20 border border-amber-500/40 p-2.5 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-amber-300">
+                <i data-lucide="edit-3" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span>Editando atendimento já salvo. Novos anexos serão somados ao caso.</span>
+            </div>
+            <button type="button" onclick="cancelarEdicaoCaso()" class="text-slate-400 hover:text-white p-1">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ABA 1: COLETA / EDIÇÃO DE CASO             -->
+        <!-- ========================================== -->
         <section id="aba-coleta" class="space-y-4">
 
-            <!-- 1. Tipo de Exame -->
+            <!-- 1. Quatro Modalidades Periciais -->
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-sm">
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
                     Modalidade Pericial
                 </label>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-4 gap-1.5">
                     <button type="button" id="btn-confronto" onclick="selecionarModalidade('CONFRONTO')"
-                        class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-blue-600/20 border-blue-500 text-blue-300">
+                        class="py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-blue-600/20 border-blue-500 text-blue-300">
                         <i data-lucide="user-check" class="w-4 h-4"></i>
-                        <span>Confronto (Vivo)</span>
+                        <span>Confronto</span>
                     </button>
                     <button type="button" id="btn-necro" onclick="selecionarModalidade('NECRO')"
-                        class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-slate-800/40 border-slate-700 text-slate-400">
+                        class="py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-slate-800/40 border-slate-700 text-slate-400">
                         <i data-lucide="skull" class="w-4 h-4"></i>
-                        <span>Necropapiloscopia</span>
+                        <span>Necro</span>
+                    </button>
+                    <button type="button" id="btn-local" onclick="selecionarModalidade('LOCAL')"
+                        class="py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-slate-800/40 border-slate-700 text-slate-400">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                        <span>Local</span>
+                    </button>
+                    <button type="button" id="btn-vistoria" onclick="selecionarModalidade('VISTORIA')"
+                        class="py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-slate-800/40 border-slate-700 text-slate-400">
+                        <i data-lucide="car" class="w-4 h-4"></i>
+                        <span>Vistoria</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 2. Dados do Caso -->
+            <!-- 2. Formulário Dinâmico -->
             <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome do Periciando / Cadáver *</label>
+                <div id="bloco-campo-identificador">
+                    <label id="rotulo-campo-identificador" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                        Nome do Periciando / Cadáver *
+                    </label>
                     <input type="text" id="campo-nome" placeholder="NOME COMPLETO"
                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 uppercase tracking-wide">
                 </div>
 
+                <!-- Bloco Vistoria Veicular -->
+                <div id="bloco-veiculo" class="hidden space-y-2.5">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Modelo do Veículo *</label>
+                            <input type="text" id="campo-veiculo-modelo" placeholder="Ex: VW GOL"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 uppercase font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cor do Veículo *</label>
+                            <input type="text" id="campo-veiculo-cor" placeholder="Ex: PRETO"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 uppercase font-semibold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                            Placa do Veículo <span class="text-slate-500 font-normal lowercase">(opcional / sem placa)</span>
+                        </label>
+                        <input type="text" id="campo-veiculo-placa" placeholder="Ex: ABC1D23 (ou deixe vazio)"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 uppercase font-mono">
+                    </div>
+                </div>
+
+                <!-- Guias e Ocorrências -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nº Guia / Ofício</label>
@@ -122,16 +169,16 @@
 
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações Rápidas (Opcional)</label>
-                    <input type="text" id="campo-obs" placeholder="Ex: Dedo com reidratação / coleta no IML"
+                    <input type="text" id="campo-obs" placeholder="Ex: Chassi adulterado / coleta de fragmento no vidro"
                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
                 </div>
             </div>
 
-            <!-- 3. Captura & Anexo de Arquivos -->
+            <!-- 3. Módulos de Captura e Seleção de Arquivos -->
             <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                        <i data-lucide="scan-line" class="w-4 h-4 text-emerald-400"></i> Scanner & Vestígios
+                        <i data-lucide="scan-line" class="w-4 h-4 text-emerald-400"></i> Documentos & Arquivos
                     </span>
                     <span id="contador-arquivos" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">0 anexo(s)</span>
                 </div>
@@ -158,15 +205,15 @@
                         </div>
                     </div>
 
-                    <!-- Ficha Padrão -->
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                    <!-- Ficha Padrão (Confronto e Necro) -->
+                    <div id="card-ficha-padrao" class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                                 <i data-lucide="contact-2" class="w-4 h-4"></i>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-200">Ficha Padrão</p>
-                                <p class="text-[10px] text-slate-400">Scanner Prontuário / RG (PDF/JPG)</p>
+                                <p class="text-[10px] text-slate-400">Scanner Prontuário / RG</p>
                             </div>
                         </div>
                         <div class="flex gap-1.5">
@@ -179,15 +226,15 @@
                         </div>
                     </div>
 
-                    <!-- Digital / Dedo -->
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                    <!-- Digitais / Dedos (Confronto e Necro) -->
+                    <div id="card-digital" class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
                                 <i data-lucide="fingerprint" class="w-4 h-4"></i>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-200">Digital / Dedo</p>
-                                <p class="text-[10px] text-slate-400">Macro ou foto da galeria</p>
+                                <p class="text-[10px] text-slate-400">Macro ou fotos da galeria</p>
                             </div>
                         </div>
                         <div class="flex gap-1.5">
@@ -199,33 +246,72 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Fotos de Local de Crime -->
+                    <div id="card-fotos-local" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                                <i data-lucide="images" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">Fotos do Local de Crime</p>
+                                <p class="text-[10px] text-slate-400">Múltiplas fotos da galeria</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="acionarGaleria('FOTO_LOCAL')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i> Fotos Celular
+                        </button>
+                    </div>
+
+                    <!-- Fotos da Vistoria Veicular (Câmera + Galeria) -->
+                    <div id="card-fotos-veiculo" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">Fotos do Veículo / Chassi</p>
+                                <p class="text-[10px] text-slate-400">Fotografe ou anexe em lote</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="acionarCâmera('FOTO_VEICULO')" class="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
+                            </button>
+                            <button type="button" onclick="acionarGaleria('FOTO_VEICULO')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
+                                <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i> Galeria
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Inputs nativos -->
                 <input type="file" id="input-camera" accept="image/*" capture="environment" class="hidden" onchange="aoProcessarArquivos(this, 'CAMERA')">
                 <input type="file" id="input-galeria" accept="image/*,application/pdf" multiple class="hidden" onchange="aoProcessarArquivos(this, 'GALERIA')">
 
+                <!-- Grade de Arquivos -->
                 <div id="lista-arquivos" class="grid grid-cols-2 gap-2 pt-2 empty:hidden"></div>
 
                 <div id="aviso-vazio" class="py-5 text-center text-slate-500 border border-slate-800/60 rounded-xl bg-slate-950/40">
                     <i data-lucide="folder-open" class="w-7 h-7 mx-auto mb-1 opacity-30"></i>
                     <p class="text-xs">Nenhum arquivo ou foto adicionada.</p>
-                    <p class="text-[10px] text-slate-600">Fotografe documentos com o Scanner integrado ou anexe arquivos.</p>
+                    <p class="text-[10px] text-slate-600">Fotografe documentos ou selecione as fotos do celular.</p>
                 </div>
             </div>
 
-            <!-- 4. Botões de Envio e Persistência -->
+            <!-- 4. Botões de Ação -->
             <div class="space-y-2 pt-1">
                 <button type="button" id="btn-enviar-drive" onclick="enviarParaGoogleDrive()"
                     class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm transition">
                     <i data-lucide="cloud-upload" class="w-5 h-5"></i>
-                    <span id="label-btn-drive">Enviar Direto para meu Google Drive</span>
+                    <span id="label-btn-drive">Enviar Conjunto Completo ao Drive</span>
                 </button>
 
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" id="btn-salvar-local" onclick="salvarAtendimentoApenasLocal()"
                         class="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 font-semibold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
                         <i data-lucide="hard-drive-download" class="w-4 h-4 text-blue-400"></i>
-                        <span>Salvar no Aparelho</span>
+                        <span id="label-btn-salvar-local">Salvar no Aparelho</span>
                     </button>
 
                     <button type="button" onclick="enviarCompartilhamentoNativo()"
@@ -243,13 +329,15 @@
             </div>
         </section>
 
-        <!-- ABA 2: HISTÓRICO / PASTAS -->
+        <!-- ========================================== -->
+        <!-- ABA 2: HISTÓRICO / PASTAS                  -->
+        <!-- ========================================== -->
         <section id="aba-historico" class="hidden space-y-3">
             <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-2.5">
                 <div class="relative">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                     <input type="text" id="filtro-texto" oninput="renderizarHistorico()"
-                        placeholder="Buscar por nome, guia ou BO..."
+                        placeholder="Buscar por nome, veículo, guia ou BO..."
                         class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
                 </div>
 
@@ -366,7 +454,7 @@
         </div>
     </div>
 
-    <!-- MODAL DETALHE DO CASO -->
+    <!-- MODAL DETALHE DO CASO COM BOTÃO DE CONTINUAR / EDITAR -->
     <div id="modal-detalhe-caso" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-slate-900 border-t sm:border border-slate-800 max-w-md w-full rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-slate-800 flex items-start justify-between gap-2 bg-slate-900/95">
@@ -396,7 +484,7 @@
                         </div>
                     </div>
                     <div class="pt-1 border-t border-slate-900">
-                        <span class="text-[10px] text-slate-500 uppercase font-bold block">Observações</span>
+                        <span class="text-[10px] text-slate-500 uppercase font-bold block">Observações / Detalhes</span>
                         <span id="detalhe-obs" class="text-slate-300 text-[11px]"></span>
                     </div>
                 </div>
@@ -404,7 +492,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                            Vestígios e Documentos Coletados
+                            Vestígios e Fotos Coletadas
                         </span>
                         <span id="detalhe-qtd-arquivos" class="text-[10px] font-mono text-slate-400"></span>
                     </div>
@@ -412,22 +500,31 @@
                 </div>
             </div>
 
+            <!-- Rodapé com Botão de Edição -->
             <div class="p-3.5 border-t border-slate-800 bg-slate-950/90 space-y-2">
-                <button type="button" id="btn-reenviar-caso" onclick="reenviarCasoAtualParaDrive()"
-                    class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition">
-                    <i data-lucide="cloud-upload" class="w-4 h-4"></i>
-                    <span id="lbl-reenviar-caso">Reenviar para Google Drive</span>
-                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="reabrirCasoParaEdicao()"
+                        class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-95">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        <span>Continuar / Editar</span>
+                    </button>
+                    <button type="button" id="btn-reenviar-caso" onclick="reenviarCasoAtualParaDrive()"
+                        class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-95">
+                        <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                        <span id="lbl-reenviar-caso">Enviar ao Drive</span>
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" onclick="exportarTodosArquivosCasoAtual()"
                         class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition">
                         <i data-lucide="download" class="w-3.5 h-3.5 text-blue-400"></i>
-                        <span>Exportar / Baixar Todos</span>
+                        <span>Exportar Todos</span>
                     </button>
                     <button type="button" onclick="excluirCasoAtual()"
                         class="bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 font-semibold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
-                        <span>Excluir Registro</span>
+                        <span>Excluir</span>
                     </button>
                 </div>
             </div>
@@ -471,7 +568,7 @@
                 <input type="url" id="input-drive-url" placeholder="https://script.google.com/macros/s/.../exec"
                     class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
                 <p class="text-[10px] text-slate-500 mt-1">
-                    Estrutura no Drive: AFIS_CAMPO / DD-MM-AAAA / [MODALIDADE]_[NOME].
+                    Estrutura no Drive: AFIS_CAMPO / DD-MM-AAAA / [MODALIDADE]_[NOME/CASO].
                 </p>
             </div>
             <div class="flex gap-2 pt-1">
@@ -485,7 +582,6 @@
         </div>
     </div>
 
-    <!-- Scripts de Operação -->
     <script>
         let modalidadeAtual = 'CONFRONTO';
         let categoriaAtual = 'GUIA';
@@ -495,6 +591,7 @@
         let cacheAtendimentos = [];
         let casoDetalheAtual = null;
         let pastasDataAbertas = {};
+        let idCasoSendoEditado = null; // Guarda o ID quando estiver continuando um caso salvo
 
         let scannerImagemBase = null;
         let scannerCategoria = 'GUIA';
@@ -517,7 +614,6 @@
             });
         }
 
-        // CAPTURA DO EVENTO DE INSTALAÇÃO
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             promptInstalacao = e;
@@ -662,13 +758,54 @@
             modalidadeAtual = tipo;
             const btnConf = document.getElementById('btn-confronto');
             const btnNec = document.getElementById('btn-necro');
+            const btnLoc = document.getElementById('btn-local');
+            const btnVis = document.getElementById('btn-vistoria');
+
+            const blocoId = document.getElementById('bloco-campo-identificador');
+            const rotuloId = document.getElementById('rotulo-campo-identificador');
+            const campoNome = document.getElementById('campo-nome');
+            const blocoVeic = document.getElementById('bloco-veiculo');
+
+            const cardFicha = document.getElementById('card-ficha-padrao');
+            const cardDig = document.getElementById('card-digital');
+            const cardLoc = document.getElementById('card-fotos-local');
+            const cardVeic = document.getElementById('card-fotos-veiculo');
+
+            const inativoCls = "py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-slate-800/40 border-slate-700 text-slate-400";
+            btnConf.className = inativoCls;
+            btnNec.className = inativoCls;
+            btnLoc.className = inativoCls;
+            btnVis.className = inativoCls;
+
+            blocoId.classList.remove('hidden');
+            blocoVeic.classList.add('hidden');
+            cardFicha.classList.add('hidden');
+            cardDig.classList.add('hidden');
+            cardLoc.classList.add('hidden');
+            cardVeic.classList.add('hidden');
 
             if (tipo === 'CONFRONTO') {
-                btnConf.className = "py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-blue-600/20 border-blue-500 text-blue-300";
-                btnNec.className = "py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-slate-800/40 border-slate-700 text-slate-400";
-            } else {
-                btnNec.className = "py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-red-600/20 border-red-500 text-red-300";
-                btnConf.className = "py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-slate-800/40 border-slate-700 text-slate-400";
+                btnConf.className = "py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-blue-600/20 border-blue-500 text-blue-300";
+                rotuloId.innerText = "Nome do Periciando *";
+                campoNome.placeholder = "NOME COMPLETO";
+                cardFicha.classList.remove('hidden');
+                cardDig.classList.remove('hidden');
+            } else if (tipo === 'NECRO') {
+                btnNec.className = "py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-red-600/20 border-red-500 text-red-300";
+                rotuloId.innerText = "Nome do Cadáver (ou Desconhecido) *";
+                campoNome.placeholder = "NOME OU DESCONHECIDO";
+                cardFicha.classList.remove('hidden');
+                cardDig.classList.remove('hidden');
+            } else if (tipo === 'LOCAL') {
+                btnLoc.className = "py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-purple-600/20 border-purple-500 text-purple-300";
+                rotuloId.innerText = "Referência do Local / Endereço *";
+                campoNome.placeholder = "EX: RUA BAHIA MERCADO CENTRAL";
+                cardLoc.classList.remove('hidden');
+            } else if (tipo === 'VISTORIA') {
+                btnVis.className = "py-2.5 px-1 rounded-xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-[10px] transition-all bg-amber-600/20 border-amber-500 text-amber-300";
+                blocoId.classList.add('hidden');
+                blocoVeic.classList.remove('hidden');
+                cardVeic.classList.remove('hidden');
             }
         }
 
@@ -695,6 +832,17 @@
                 .trim();
         }
 
+        function obterIdentificadorCaso() {
+            if (modalidadeAtual === 'VISTORIA') {
+                const modelo = sanitizar(document.getElementById('campo-veiculo-modelo').value || 'VEICULO');
+                const cor = sanitizar(document.getElementById('campo-veiculo-cor').value || 'COR');
+                const placaRaw = sanitizar(document.getElementById('campo-veiculo-placa').value || '');
+                const placa = placaRaw ? `_${placaRaw}` : '_SEM_PLACA';
+                return `${modelo}_${cor}${placa}`;
+            }
+            return sanitizar(document.getElementById('campo-nome').value || 'CASO');
+        }
+
         function obterDataAtualDDMMAAAA() {
             const agora = new Date();
             const dia = String(agora.getDate()).padStart(2, '0');
@@ -704,10 +852,10 @@
         }
 
         function gerarNomePadronizado(cat, ext, sufixo = '') {
-            const nomeIndividuo = sanitizar(document.getElementById('campo-nome').value || 'INDIVIDUO');
+            const idCaso = obterIdentificadorCaso();
             const dataStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             const horaStr = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
-            return `${modalidadeAtual}_${nomeIndividuo}_${cat}${sufixo}_${dataStr}_${horaStr}.${ext}`;
+            return `${modalidadeAtual}_${idCaso}_${cat}${sufixo}_${dataStr}_${horaStr}.${ext}`;
         }
 
         function abrirScannerComArquivo(file, cat, indiceExistente = null) {
@@ -720,7 +868,7 @@
                 scannerIndiceEdicao = indiceExistente;
                 scannerRotacao = 0;
 
-                if (cat === 'DIGITAL') {
+                if (cat === 'DIGITAL' || cat === 'FOTO_LOCAL' || cat === 'FOTO_VEICULO') {
                     scannerFiltro = 'ORIGINAL';
                     scannerFormato = 'JPG';
                 } else {
@@ -998,7 +1146,7 @@
             listaFiles.forEach((origFile, idx) => {
                 const isPdf = origFile.type === 'application/pdf' || origFile.name.toLowerCase().endsWith('.pdf');
                 const ext = isPdf ? 'pdf' : (origFile.name.split('.').pop() || 'jpg');
-                const sufixoContador = listaFiles.length > 1 ? `_${idx + 1}` : '';
+                const sufixoContador = (anexos.length > 0 || listaFiles.length > 1) ? `_${anexos.length + idx + 1}` : '';
                 const nomeFormatado = gerarNomePadronizado(categoriaAtual, ext, sufixoContador);
 
                 const fileRenomeado = new File([origFile], nomeFormatado, { type: origFile.type });
@@ -1092,8 +1240,47 @@
             });
         }
 
+        function validarCamposObrigatorios() {
+            if (modalidadeAtual === 'VISTORIA') {
+                const modelo = document.getElementById('campo-veiculo-modelo').value.trim();
+                const cor = document.getElementById('campo-veiculo-cor').value.trim();
+                if (!modelo) {
+                    alert('Informe o modelo do veículo.');
+                    document.getElementById('campo-veiculo-modelo').focus();
+                    return false;
+                }
+                if (!cor) {
+                    alert('Informe a cor do veículo.');
+                    document.getElementById('campo-veiculo-cor').focus();
+                    return false;
+                }
+                return true;
+            } else {
+                const nome = document.getElementById('campo-nome').value.trim();
+                if (!nome) {
+                    const rotulo = modalidadeAtual === 'LOCAL' ? 'a referência do local / endereço.' : 'o nome do periciando / cadáver.';
+                    alert(`Informe ${rotulo}`);
+                    document.getElementById('campo-nome').focus();
+                    return false;
+                }
+                return true;
+            }
+        }
+
         async function montarRegistroAtendimento(enviadoDriveStatus) {
-            const nome = document.getElementById('campo-nome').value.trim().toUpperCase();
+            let nomeExibicao = '';
+            let detalhesExtras = '';
+
+            if (modalidadeAtual === 'VISTORIA') {
+                const modelo = document.getElementById('campo-veiculo-modelo').value.trim().toUpperCase();
+                const cor = document.getElementById('campo-veiculo-cor').value.trim().toUpperCase();
+                const placa = document.getElementById('campo-veiculo-placa').value.trim().toUpperCase() || 'SEM PLACA';
+                nomeExibicao = `${modelo} - ${cor} (${placa})`;
+                detalhesExtras = `Modelo: ${modelo}\nCor: ${cor}\nPlaca: ${placa}`;
+            } else {
+                nomeExibicao = document.getElementById('campo-nome').value.trim().toUpperCase();
+            }
+
             const guia = document.getElementById('campo-guia').value.trim() || 'S/N';
             const bo = document.getElementById('campo-bo').value.trim() || 'S/N';
             const obs = document.getElementById('campo-obs').value.trim() || 'Sem observações';
@@ -1111,12 +1298,13 @@
             }
 
             return {
-                id: Date.now(),
+                id: idCasoSendoEditado || Date.now(),
                 data: obterDataAtualDDMMAAAA(),
                 hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                 modalidade: modalidadeAtual,
-                nome: nome,
-                nomeCaso: sanitizar(nome),
+                nome: nomeExibicao,
+                nomeCaso: obterIdentificadorCaso(),
+                detalhesExtras: detalhesExtras,
                 guia: guia,
                 bo: bo,
                 obs: obs,
@@ -1126,14 +1314,9 @@
         }
 
         async function salvarAtendimentoApenasLocal() {
-            const nome = document.getElementById('campo-nome').value.trim();
-            if (!nome) {
-                alert('Informe o nome do periciando / cadáver.');
-                document.getElementById('campo-nome').focus();
-                return;
-            }
+            if (!validarCamposObrigatorios()) return;
             if (anexos.length === 0) {
-                alert('Adicione ao menos uma foto ou documento em PDF.');
+                alert('Adicione ao menos uma foto ou documento.');
                 return;
             }
 
@@ -1144,7 +1327,7 @@
                 const registro = await montarRegistroAtendimento(false);
                 await salvarRegistroIndexedDB(registro);
                 await sincronizarCacheHistorico();
-                alert('📁 Atendimento salvo na memória do aparelho!\nConsulte a aba "Histórico / Pastas".');
+                alert(idCasoSendoEditado ? '📁 Atendimento atualizado com sucesso no aparelho!' : '📁 Atendimento salvo na memória do aparelho!\nConsulte a aba "Histórico / Pastas".');
                 limparTudo();
             } catch (e) {
                 console.error(e);
@@ -1162,15 +1345,10 @@
                 return;
             }
 
-            const nome = document.getElementById('campo-nome').value.trim();
-            if (!nome) {
-                alert('Informe o nome do periciando / cadáver.');
-                document.getElementById('campo-nome').focus();
-                return;
-            }
+            if (!validarCamposObrigatorios()) return;
 
             if (anexos.length === 0) {
-                alert('Adicione ao menos uma foto ou documento em PDF.');
+                alert('Adicione ao menos uma foto ou documento.');
                 return;
             }
 
@@ -1186,11 +1364,11 @@
                 await salvarRegistroIndexedDB(registroSalvo);
 
                 const dataHora = new Date().toLocaleString('pt-BR');
-                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${registroSalvo.modalidade}\nPericiando/Cadáver: ${registroSalvo.nome}\nGuia/Ofício: ${registroSalvo.guia}\nBoletim de Ocorrência (BO): ${registroSalvo.bo}\nData/Hora Coleta: ${dataHora}\nObservações: ${registroSalvo.obs}\nTotal de Arquivos: ${registroSalvo.arquivos.length}`;
+                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${registroSalvo.modalidade}\nIdentificação: ${registroSalvo.nome}\n${registroSalvo.detalhesExtras ? registroSalvo.detalhesExtras + '\n' : ''}Guia/Ofício: ${registroSalvo.guia}\nBoletim de Ocorrência (BO): ${registroSalvo.bo}\nData/Hora Coleta: ${dataHora}\nObservações: ${registroSalvo.obs}\nTotal de Arquivos: ${registroSalvo.arquivos.length}`;
 
                 const payload = {
                     modalidade: registroSalvo.modalidade,
-                    nomeCaso: registroSalvo.nomeCaso || sanitizar(registroSalvo.nome),
+                    nomeCaso: registroSalvo.nomeCaso,
                     metadados: metadadosTexto,
                     arquivos: registroSalvo.arquivos.map(a => ({
                         nome: a.nome,
@@ -1220,10 +1398,101 @@
                 limparTudo();
             } finally {
                 btn.disabled = false;
-                lbl.innerText = 'Enviar Direto para meu Google Drive';
+                lbl.innerText = 'Enviar Conjunto Completo ao Drive';
             }
         }
 
+        // ========================================================
+        // REABRIR E EDITAR ATENDIMENTO SALVO (CONTINUAÇÃO DO FLUXO)
+        // ========================================================
+        function reabrirCasoParaEdicao() {
+            if (!casoDetalheAtual) return;
+            const caso = casoDetalheAtual;
+
+            // 1. Limpa anexos atuais e define modo de edição
+            limparTudoSemConfirmar();
+            idCasoSendoEditado = caso.id;
+
+            // 2. Define a modalidade
+            selecionarModalidade(caso.modalidade);
+
+            // 3. Preenche os campos textuais
+            if (caso.modalidade === 'VISTORIA') {
+                if (caso.detalhesExtras) {
+                    const linhas = caso.detalhesExtras.split('\n');
+                    linhas.forEach(linha => {
+                        if (linha.startsWith('Modelo: ')) document.getElementById('campo-veiculo-modelo').value = linha.replace('Modelo: ', '').trim();
+                        if (linha.startsWith('Cor: ')) document.getElementById('campo-veiculo-cor').value = linha.replace('Cor: ', '').trim();
+                        if (linha.startsWith('Placa: ')) {
+                            const p = linha.replace('Placa: ', '').trim();
+                            if (p !== 'SEM PLACA') document.getElementById('campo-veiculo-placa').value = p;
+                        }
+                    });
+                }
+            } else {
+                document.getElementById('campo-nome').value = caso.nome;
+            }
+
+            document.getElementById('campo-guia').value = (caso.guia && caso.guia !== 'S/N') ? caso.guia : '';
+            document.getElementById('campo-bo').value = (caso.bo && caso.bo !== 'S/N') ? caso.bo : '';
+            document.getElementById('campo-obs').value = (caso.obs && caso.obs !== 'Sem observações') ? caso.obs : '';
+
+            // 4. Converte os arquivos Base64 de volta para Blobs/Files e remonta a galeria
+            (caso.arquivos || []).forEach(arq => {
+                const isPdf = arq.mimeType === 'application/pdf' || (arq.nome && arq.nome.toLowerCase().endsWith('.pdf'));
+                const blob = base64ParaBlob(arq.base64, arq.mimeType || (isPdf ? 'application/pdf' : 'image/jpeg'));
+                const file = new File([blob], arq.nome, { type: blob.type });
+                const objUrl = URL.createObjectURL(blob);
+
+                anexos.push({
+                    id: Date.now() + Math.random(),
+                    file: file,
+                    nomeArquivo: arq.nome,
+                    url: objUrl,
+                    categoria: arq.categoria || 'ARQUIVO',
+                    isPdf: isPdf,
+                    tamanhoKb: arq.tamanhoKb || Math.round(blob.size / 1024).toString()
+                });
+            });
+
+            // 5. Atualiza a UI para modo de edição
+            document.getElementById('tab-coleta-rotulo').innerText = '✏️ Editando Coleta';
+            document.getElementById('label-btn-salvar-local').innerText = 'Atualizar no Aparelho';
+            document.getElementById('banner-modo-edicao').classList.remove('hidden');
+
+            renderizarGaleria();
+            fecharDetalheCaso();
+            alternarAba('COLETA');
+        }
+
+        function cancelarEdicaoCaso() {
+            limparTudo();
+        }
+
+        function limparTudoSemConfirmar() {
+            anexos.forEach(a => URL.revokeObjectURL(a.url));
+            anexos = [];
+            idCasoSendoEditado = null;
+            document.getElementById('campo-nome').value = '';
+            document.getElementById('campo-veiculo-modelo').value = '';
+            document.getElementById('campo-veiculo-cor').value = '';
+            document.getElementById('campo-veiculo-placa').value = '';
+            document.getElementById('campo-guia').value = '';
+            document.getElementById('campo-bo').value = '';
+            document.getElementById('campo-obs').value = '';
+            document.getElementById('banner-modo-edicao').classList.add('hidden');
+            document.getElementById('tab-coleta-rotulo').innerText = '+ Nova Coleta';
+            document.getElementById('label-btn-salvar-local').innerText = 'Salvar no Aparelho';
+            renderizarGaleria();
+        }
+
+        function limparTudo() {
+            limparTudoSemConfirmar();
+        }
+
+        // ==========================================
+        // MÓDULO HISTÓRICO / PASTAS
+        // ==========================================
         function converterInputDateParaDDMMAAAA(isoDate) {
             if (!isoDate) return '';
             const partes = isoDate.split('-');
@@ -1264,7 +1533,8 @@
                 const bateTexto = !termo ||
                     (item.nome && item.nome.toUpperCase().includes(termo)) ||
                     (item.guia && item.guia.toUpperCase().includes(termo)) ||
-                    (item.bo && item.bo.toUpperCase().includes(termo));
+                    (item.bo && item.bo.toUpperCase().includes(termo)) ||
+                    (item.nomeCaso && item.nomeCaso.toUpperCase().includes(termo));
                 return bateData && bateTexto;
             });
 
@@ -1290,11 +1560,14 @@
                 const aberta = pastasDataAbertas[dataKey] !== false;
 
                 const cartoesCasosHtml = casosDia.map(caso => {
-                    const pastaNome = `${caso.modalidade}_${caso.nomeCaso || sanitizar(caso.nome)}`;
+                    const pastaNome = `${caso.modalidade}_${caso.nomeCaso}`;
                     const qtdArq = (caso.arquivos || []).length;
-                    const corMod = caso.modalidade === 'NECRO'
-                        ? 'text-red-300 bg-red-500/15 border-red-500/30'
-                        : 'text-blue-300 bg-blue-500/15 border-blue-500/30';
+                    
+                    let corMod = 'text-blue-300 bg-blue-500/15 border-blue-500/30';
+                    if (caso.modalidade === 'NECRO') corMod = 'text-red-300 bg-red-500/15 border-red-500/30';
+                    if (caso.modalidade === 'LOCAL') corMod = 'text-purple-300 bg-purple-500/15 border-purple-500/30';
+                    if (caso.modalidade === 'VISTORIA') corMod = 'text-amber-300 bg-amber-500/15 border-amber-500/30';
+
                     const badgeSync = caso.enviadoDrive
                         ? '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Drive OK</span>'
                         : '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Local</span>';
@@ -1352,19 +1625,23 @@
             if (!caso) return;
             casoDetalheAtual = caso;
 
-            const pastaNome = `${caso.modalidade}_${caso.nomeCaso || sanitizar(caso.nome)}`;
+            const pastaNome = `${caso.modalidade}_${caso.nomeCaso}`;
             document.getElementById('detalhe-titulo-pasta').innerText = pastaNome;
-            document.getElementById('detalhe-subtitulo-data').innerText = `Data: ${caso.data}${caso.hora ? ' às ' + caso.hora : ''} · Periciando: ${caso.nome}`;
+            document.getElementById('detalhe-subtitulo-data').innerText = `Data: ${caso.data}${caso.hora ? ' às ' + caso.hora : ''} · ${caso.nome}`;
             document.getElementById('detalhe-guia').innerText = caso.guia || 'S/N';
             document.getElementById('detalhe-bo').innerText = caso.bo || 'S/N';
-            document.getElementById('detalhe-obs').innerText = caso.obs || 'Sem observações';
+            document.getElementById('detalhe-obs').innerText = (caso.detalhesExtras ? caso.detalhesExtras + '\n' : '') + (caso.obs || 'Sem observações');
             document.getElementById('detalhe-qtd-arquivos').innerText = `${(caso.arquivos || []).length} ficheiro(s)`;
 
             const badgeMod = document.getElementById('detalhe-badge-modalidade');
             badgeMod.innerText = caso.modalidade;
-            badgeMod.className = caso.modalidade === 'NECRO'
-                ? 'text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-red-500/20 text-red-300 border border-red-500/40'
-                : 'text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40';
+            
+            let corBadge = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+            if (caso.modalidade === 'NECRO') corBadge = 'bg-red-500/20 text-red-300 border-red-500/40';
+            if (caso.modalidade === 'LOCAL') corBadge = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+            if (caso.modalidade === 'VISTORIA') corBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+            
+            badgeMod.className = `text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${corBadge}`;
 
             const badgeSync = document.getElementById('detalhe-badge-sync');
             badgeSync.innerText = caso.enviadoDrive ? 'Sincronizado Drive' : 'Salvo no Aparelho';
@@ -1466,15 +1743,15 @@
             const btn = document.getElementById('btn-reenviar-caso');
             const lbl = document.getElementById('lbl-reenviar-caso');
             btn.disabled = true;
-            lbl.innerText = 'Reenviando para o Google Drive...';
+            lbl.innerText = 'Enviando...';
 
             try {
                 const c = casoDetalheAtual;
-                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${c.modalidade}\nPericiando/Cadáver: ${c.nome}\nGuia/Ofício: ${c.guia}\nBoletim de Ocorrência (BO): ${c.bo}\nData Coleta: ${c.data} ${c.hora || ''}\nObservações: ${c.obs}\nTotal de Arquivos: ${(c.arquivos || []).length}`;
+                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${c.modalidade}\nIdentificação: ${c.nome}\n${c.detalhesExtras ? c.detalhesExtras + '\n' : ''}Guia/Ofício: ${c.guia}\nBoletim de Ocorrência (BO): ${c.bo}\nData Coleta: ${c.data} ${c.hora || ''}\nObservações: ${c.obs}\nTotal de Arquivos: ${(c.arquivos || []).length}`;
 
                 const payload = {
                     modalidade: c.modalidade,
-                    nomeCaso: c.nomeCaso || sanitizar(c.nome),
+                    nomeCaso: c.nomeCaso,
                     metadados: metadadosTexto,
                     arquivos: (c.arquivos || []).map(a => ({
                         nome: a.nome,
@@ -1494,13 +1771,13 @@
                 await salvarRegistroIndexedDB(c);
                 await sincronizarCacheHistorico();
                 abrirDetalheCaso(c.id);
-                alert('✅ Atendimento reenviado com sucesso para o Google Drive!');
+                alert('✅ Atendimento enviado com sucesso para o Google Drive!');
             } catch (e) {
                 console.error(e);
                 alert('Falha ao reenviar para o Google Drive. Verifique sua conexão.');
             } finally {
                 btn.disabled = false;
-                lbl.innerText = 'Reenviar para Google Drive';
+                lbl.innerText = 'Enviar ao Drive';
             }
         }
 
@@ -1533,20 +1810,17 @@
         }
 
         async function enviarCompartilhamentoNativo() {
-            const nome = document.getElementById('campo-nome').value.trim();
-            if (!nome) {
-                alert('Informe o nome do periciando / cadáver.');
-                return;
-            }
+            if (!validarCamposObrigatorios()) return;
             if (anexos.length === 0) {
                 alert('Adicione ao menos uma foto ou documento.');
                 return;
             }
 
+            const idCaso = obterIdentificadorCaso();
             const guia = document.getElementById('campo-guia').value.trim() || 'S/N';
             const bo = document.getElementById('campo-bo').value.trim() || 'S/N';
-            const tituloAssunto = `[AFIS] ${modalidadeAtual} - ${nome.toUpperCase()}`;
-            const textoCorpo = `Atendimento Pericial (${modalidadeAtual}):\n- Periciando: ${nome.toUpperCase()}\n- Guia: ${guia} | BO: ${bo}\n- Arquivos: ${anexos.length} anexo(s)`;
+            const tituloAssunto = `[AFIS] ${modalidadeAtual} - ${idCaso}`;
+            const textoCorpo = `Atendimento Pericial (${modalidadeAtual}):\n- Caso/Identificação: ${idCaso}\n- Guia: ${guia} | BO: ${bo}\n- Arquivos: ${anexos.length} anexo(s)`;
 
             const arquivosParaEnvio = anexos.map(a => a.file);
 
@@ -1561,7 +1835,7 @@
                     if (e.name !== 'AbortError') console.warn(e);
                 }
             } else {
-                alert('Compartilhamento de arquivos não suportado neste navegador. Use o envio para o Google Drive.');
+                alert('Compartilhamento direto não suportado. Utilize o envio para o Google Drive.');
             }
         }
 
@@ -1580,16 +1854,6 @@
                 fecharConfig();
                 alert('Configuração salva com sucesso!');
             }
-        }
-
-        function limparTudo() {
-            anexos.forEach(a => URL.revokeObjectURL(a.url));
-            anexos = [];
-            document.getElementById('campo-nome').value = '';
-            document.getElementById('campo-guia').value = '';
-            document.getElementById('campo-bo').value = '';
-            document.getElementById('campo-obs').value = '';
-            renderizarGaleria();
         }
     </script>
 </body>
