@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f172a">
     <title>AFIS Mobile · Coleta de Campo</title>
 
-    <!-- Manifesto e Ícones PWA -->
+    <!-- Manifesto PWA -->
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815428.png">
 
@@ -20,178 +20,440 @@
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
 
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3 shadow-md flex justify-between items-center">
-        <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
-                <i data-lucide="fingerprint" class="w-5 h-5"></i>
+    <!-- Topbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
+                    <i data-lucide="fingerprint" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-extrabold tracking-tight uppercase flex items-center gap-1">
+                        AFIS Mobile <span class="text-blue-400">· Campo</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-mono">DPT-BA · Coleta Pericial</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-sm font-extrabold tracking-tight uppercase flex items-center gap-1">
-                    AFIS Mobile <span class="text-blue-400">· Campo</span>
-                </h1>
-                <p class="text-[10px] text-slate-400 font-mono">DPT-BA · Coleta Pericial</p>
+            <div class="flex items-center gap-1.5">
+                <!-- Botão de Instalação Dinâmico -->
+                <button id="btn-instalar-pwa" onclick="instalarApp()" class="hidden px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-md active:scale-95 transition">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Instalar
+                </button>
+                <button onclick="abrirConfig()" class="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white active:scale-95 transition" title="Configurar Destino">
+                    <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i>
+                </button>
             </div>
         </div>
-        <button onclick="abrirConfig()" class="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white active:scale-95 transition" title="Configurar Destino">
-            <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i>
-        </button>
+
+        <!-- Abas de Navegação Rápida -->
+        <div class="px-4 pb-2.5 max-w-md mx-auto w-full grid grid-cols-2 gap-2">
+            <button type="button" id="tab-btn-coleta" onclick="alternarAba('COLETA')"
+                class="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white shadow-md shadow-blue-600/25">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>+ Nova Coleta</span>
+            </button>
+            <button type="button" id="tab-btn-historico" onclick="alternarAba('HISTORICO')"
+                class="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-slate-800/80 text-slate-300 border border-slate-700/80 hover:text-white">
+                <i data-lucide="folder-kanban" class="w-4 h-4 text-amber-400"></i>
+                <span>Histórico / Pastas</span>
+                <span id="badge-total-casos" class="ml-0.5 px-1.5 py-0.2 bg-slate-950 text-amber-400 rounded-full text-[10px] font-mono border border-slate-700">0</span>
+            </button>
+        </div>
     </header>
 
+    <!-- Conteúdo Principal -->
     <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
 
-        <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-sm">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Modalidade Pericial
-            </label>
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btn-confronto" onclick="selecionarModalidade('CONFRONTO')"
-                    class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-blue-600/20 border-blue-500 text-blue-300">
-                    <i data-lucide="user-check" class="w-4 h-4"></i>
-                    <span>Confronto (Vivo)</span>
-                </button>
-                <button type="button" id="btn-necro" onclick="selecionarModalidade('NECRO')"
-                    class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-slate-800/40 border-slate-700 text-slate-400">
-                    <i data-lucide="skull" class="w-4 h-4"></i>
-                    <span>Necropapiloscopia</span>
-                </button>
-            </div>
+        <!-- Banner de Status Offline -->
+        <div id="banner-offline" class="hidden bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-xl flex items-center gap-2 text-amber-300 text-xs font-medium">
+            <i data-lucide="wifi-off" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+            <span>Você está offline. Os atendimentos serão salvos no banco local do aparelho (IndexedDB).</span>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome do Periciando / Cadáver *</label>
-                <input type="text" id="campo-nome" placeholder="NOME COMPLETO"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 uppercase tracking-wide">
+        <!-- ABA 1: NOVA COLETA -->
+        <section id="aba-coleta" class="space-y-4">
+
+            <!-- 1. Tipo de Exame -->
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl shadow-sm">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Modalidade Pericial
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-confronto" onclick="selecionarModalidade('CONFRONTO')"
+                        class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-blue-600/20 border-blue-500 text-blue-300">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
+                        <span>Confronto (Vivo)</span>
+                    </button>
+                    <button type="button" id="btn-necro" onclick="selecionarModalidade('NECRO')"
+                        class="py-2.5 px-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs transition-all bg-slate-800/40 border-slate-700 text-slate-400">
+                        <i data-lucide="skull" class="w-4 h-4"></i>
+                        <span>Necropapiloscopia</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <!-- 2. Dados do Caso -->
+            <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nº Guia / Ofício</label>
-                    <input type="text" id="campo-guia" placeholder="Ex: 162496/2026"
-                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 uppercase">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome do Periciando / Cadáver *</label>
+                    <input type="text" id="campo-nome" placeholder="NOME COMPLETO"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 uppercase tracking-wide">
                 </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nº Guia / Ofício</label>
+                        <input type="text" id="campo-guia" placeholder="Ex: 162496/2026"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nº Ocorrência (BO)</label>
+                        <input type="text" id="campo-bo" placeholder="Ex: 790255/2026"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 uppercase">
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nº Ocorrência (BO)</label>
-                    <input type="text" id="campo-bo" placeholder="Ex: 790255/2026"
-                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 uppercase">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações Rápidas (Opcional)</label>
+                    <input type="text" id="campo-obs" placeholder="Ex: Dedo com reidratação / coleta no IML"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
                 </div>
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações Rápidas (Opcional)</label>
-                <input type="text" id="campo-obs" placeholder="Ex: Dedo com reidratação / coleta no IML"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
-            </div>
-        </div>
+            <!-- 3. Captura & Anexo de Arquivos -->
+            <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <i data-lucide="scan-line" class="w-4 h-4 text-emerald-400"></i> Scanner & Vestígios
+                    </span>
+                    <span id="contador-arquivos" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">0 anexo(s)</span>
+                </div>
 
-        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <i data-lucide="paperclip" class="w-4 h-4 text-emerald-400"></i> Documentos e Vestígios
-                </span>
-                <span id="contador-arquivos" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">0 anexo(s)</span>
-            </div>
-
-            <div class="space-y-2">
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                <div class="space-y-2">
+                    <!-- Guia / Ofício -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">Guia / Ofício</p>
+                                <p class="text-[10px] text-slate-400">Scanner A4 (PDF/JPG) ou Anexo</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-bold text-slate-200">Guia / Ofício</p>
-                            <p class="text-[10px] text-slate-400">Foto ou arquivo PDF</p>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="acionarCâmera('GUIA')" class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
+                            </button>
+                            <button type="button" onclick="acionarGaleria('GUIA')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i> Arquivo
+                            </button>
                         </div>
                     </div>
-                    <div class="flex gap-1.5">
-                        <button type="button" onclick="acionarCâmera('GUIA')" class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
-                            <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
-                        </button>
-                        <button type="button" onclick="acionarGaleria('GUIA')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
-                            <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i> Arquivo
-                        </button>
+
+                    <!-- Ficha Padrão -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="contact-2" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">Ficha Padrão</p>
+                                <p class="text-[10px] text-slate-400">Scanner Prontuário / RG (PDF/JPG)</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="acionarCâmera('FICHA_PADRAO')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
+                            </button>
+                            <button type="button" onclick="acionarGaleria('FICHA_PADRAO')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i> Arquivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Digital / Dedo -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                                <i data-lucide="fingerprint" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">Digital / Dedo</p>
+                                <p class="text-[10px] text-slate-400">Macro ou foto da galeria</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="acionarCâmera('DIGITAL')" class="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
+                            </button>
+                            <button type="button" onclick="acionarGaleria('DIGITAL')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-amber-400"></i> Arquivo
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                            <i data-lucide="contact-2" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-slate-200">Ficha Padrão</p>
-                            <p class="text-[10px] text-slate-400">Prontuário ou RG (Foto/PDF)</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <button type="button" onclick="acionarCâmera('FICHA_PADRAO')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
-                            <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
-                        </button>
-                        <button type="button" onclick="acionarGaleria('FICHA_PADRAO')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
-                            <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i> Arquivo
-                        </button>
-                    </div>
-                </div>
+                <input type="file" id="input-camera" accept="image/*" capture="environment" class="hidden" onchange="aoProcessarArquivos(this, 'CAMERA')">
+                <input type="file" id="input-galeria" accept="image/*,application/pdf" multiple class="hidden" onchange="aoProcessarArquivos(this, 'GALERIA')">
 
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                            <i data-lucide="fingerprint" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-slate-200">Digital / Dedo</p>
-                            <p class="text-[10px] text-slate-400">Macro ou foto da galeria</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <button type="button" onclick="acionarCâmera('DIGITAL')" class="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-[11px] font-semibold flex items-center gap-1 shadow">
-                            <i data-lucide="camera" class="w-3.5 h-3.5"></i> Câmera
-                        </button>
-                        <button type="button" onclick="acionarGaleria('DIGITAL')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 active:scale-95 text-slate-200 text-[11px] font-semibold flex items-center gap-1">
-                            <i data-lucide="upload" class="w-3.5 h-3.5 text-amber-400"></i> Arquivo
-                        </button>
-                    </div>
+                <div id="lista-arquivos" class="grid grid-cols-2 gap-2 pt-2 empty:hidden"></div>
+
+                <div id="aviso-vazio" class="py-5 text-center text-slate-500 border border-slate-800/60 rounded-xl bg-slate-950/40">
+                    <i data-lucide="folder-open" class="w-7 h-7 mx-auto mb-1 opacity-30"></i>
+                    <p class="text-xs">Nenhum arquivo ou foto adicionada.</p>
+                    <p class="text-[10px] text-slate-600">Fotografe documentos com o Scanner integrado ou anexe arquivos.</p>
                 </div>
             </div>
 
-            <input type="file" id="input-camera" accept="image/*" capture="environment" class="hidden" onchange="aoProcessarArquivos(this)">
-            <input type="file" id="input-galeria" accept="image/*,application/pdf" multiple class="hidden" onchange="aoProcessarArquivos(this)">
+            <!-- 4. Botões de Envio e Persistência -->
+            <div class="space-y-2 pt-1">
+                <button type="button" id="btn-enviar-drive" onclick="enviarParaGoogleDrive()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm transition">
+                    <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                    <span id="label-btn-drive">Enviar Direto para meu Google Drive</span>
+                </button>
 
-            <div id="lista-arquivos" class="grid grid-cols-2 gap-2 pt-2 empty:hidden"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-salvar-local" onclick="salvarAtendimentoApenasLocal()"
+                        class="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 font-semibold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="hard-drive-download" class="w-4 h-4 text-blue-400"></i>
+                        <span>Salvar no Aparelho</span>
+                    </button>
 
-            <div id="aviso-vazio" class="py-5 text-center text-slate-500 border border-slate-800/60 rounded-xl bg-slate-950/40">
-                <i data-lucide="folder-open" class="w-7 h-7 mx-auto mb-1 opacity-30"></i>
-                <p class="text-xs">Nenhum arquivo ou foto adicionada.</p>
-                <p class="text-[10px] text-slate-600">Fotografe direto ou anexe PDFs/fotos do aparelho.</p>
+                    <button type="button" onclick="enviarCompartilhamentoNativo()"
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold py-2.5 px-3 rounded-xl text-xs transition border border-slate-800 flex items-center justify-center gap-1.5">
+                        <i data-lucide="share-2" class="w-4 h-4 text-slate-400"></i>
+                        <span>Compartilhar</span>
+                    </button>
+                </div>
+
+                <button type="button" onclick="limparTudo()"
+                    class="w-full text-slate-500 hover:text-red-400 font-medium py-2 text-[11px] transition flex items-center justify-center gap-1">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span>Limpar formulário para novo atendimento</span>
+                </button>
             </div>
-        </div>
+        </section>
 
-        <div class="space-y-2 pt-1">
-            <button type="button" id="btn-enviar-drive" onclick="enviarParaGoogleDrive()"
-                class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-sm transition">
-                <i data-lucide="cloud-upload" class="w-5 h-5"></i>
-                <span id="label-btn-drive">Enviar Direto para meu Google Drive</span>
-            </button>
+        <!-- ABA 2: HISTÓRICO / PASTAS -->
+        <section id="aba-historico" class="hidden space-y-3">
+            <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-sm space-y-2.5">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="filtro-texto" oninput="renderizarHistorico()"
+                        placeholder="Buscar por nome, guia ou BO..."
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                </div>
 
-            <button type="button" onclick="enviarCompartilhamentoNativo()"
-                class="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold py-2.5 px-4 rounded-xl text-xs transition border border-slate-800 flex items-center justify-center gap-1.5">
-                <i data-lucide="share-2" class="w-4 h-4 text-slate-400"></i>
-                <span>Compartilhar via WhatsApp / E-mail</span>
-            </button>
+                <div class="flex items-center gap-1.5">
+                    <div class="relative flex-1">
+                        <input type="date" id="filtro-data" onchange="renderizarHistorico()"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                    </div>
+                    <button type="button" onclick="filtrarHoje()"
+                        class="px-3 py-1.5 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/30 text-[11px] font-bold transition whitespace-nowrap">
+                        Hoje
+                    </button>
+                    <button type="button" onclick="limparFiltrosHistorico()"
+                        class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold transition whitespace-nowrap">
+                        Ver Todos
+                    </button>
+                </div>
+            </div>
 
-            <button type="button" onclick="limparTudo()"
-                class="w-full text-slate-500 hover:text-red-400 font-medium py-2 text-[11px] transition flex items-center justify-center gap-1">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                <span>Limpar formulário para novo atendimento</span>
-            </button>
-        </div>
+            <div id="arvore-pastas" class="space-y-2.5"></div>
+
+            <div id="historico-vazio" class="hidden py-10 text-center text-slate-500 border border-slate-800/60 rounded-2xl bg-slate-900/40 px-4">
+                <i data-lucide="folder-search" class="w-10 h-10 mx-auto mb-2 opacity-30 text-amber-400"></i>
+                <p class="text-xs font-semibold text-slate-400">Nenhum atendimento encontrado no arquivo local.</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Os casos salvos ou enviados aparecerão organizados por data e pasta individual.</p>
+            </div>
+        </section>
 
     </main>
 
+    <!-- MODAL DE SCANNER -->
+    <div id="modal-scanner" class="hidden fixed inset-0 z-[55] bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-4">
+        <div class="max-w-md mx-auto w-full flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center">
+                    <i data-lucide="scan-line" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-white">Ajuste do Scanner Pericial</h3>
+                    <p id="scanner-subtitulo" class="text-[10px] text-slate-400 font-mono">Categoria: GUIA</p>
+                </div>
+            </div>
+            <button type="button" onclick="fecharScannerModal()" class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 max-w-md mx-auto w-full my-2 relative bg-black/90 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center min-h-[240px]">
+            <img id="scanner-preview-img" src="" alt="Pré-visualização do Scanner" class="max-w-full max-h-[46vh] object-contain transition-opacity duration-150">
+            <div id="scanner-loading" class="hidden absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center gap-2">
+                <div class="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-[11px] font-mono text-blue-300">Processando documento...</span>
+            </div>
+        </div>
+
+        <div class="max-w-md mx-auto w-full bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 shadow-2xl">
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Filtro de Tratamento</span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="rotacionarScanner(-90)"
+                            class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[10px] font-semibold flex items-center gap-1 active:scale-95 transition"
+                            title="Girar 90° à esquerda">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3 text-blue-400"></i> 90° Esq
+                        </button>
+                        <button type="button" onclick="rotacionarScanner(90)"
+                            class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[10px] font-semibold flex items-center gap-1 active:scale-95 transition"
+                            title="Girar 90° à direita">
+                            <i data-lucide="rotate-cw" class="w-3 h-3 text-blue-400"></i> 90° Dir
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button type="button" id="btn-filtro-pb" onclick="selecionarFiltroScanner('PB')"
+                        class="py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition">
+                        <i data-lucide="file-search" class="w-3.5 h-3.5"></i>
+                        <span>P&B Documento</span>
+                    </button>
+                    <button type="button" id="btn-filtro-cor" onclick="selecionarFiltroScanner('COR')"
+                        class="py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Cor Aprimorada</span>
+                    </button>
+                    <button type="button" id="btn-filtro-orig" onclick="selecionarFiltroScanner('ORIGINAL')"
+                        class="py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition">
+                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                        <span>Foto Original</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Formato de Saída</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-saida-pdf" onclick="selecionarSaidaScanner('PDF')"
+                        class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                        <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                        <span>Gerar PDF (A4)</span>
+                    </button>
+                    <button type="button" id="btn-saida-jpg" onclick="selecionarSaidaScanner('JPG')"
+                        class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                        <i data-lucide="file-image" class="w-4 h-4"></i>
+                        <span>Salvar JPEG HD</span>
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" id="btn-confirmar-scanner" onclick="confirmarEscaneamento()"
+                class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 text-xs transition">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                <span id="lbl-confirmar-scanner">Confirmar Escaneamento</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHE DO CASO -->
+    <div id="modal-detalhe-caso" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-slate-900 border-t sm:border border-slate-800 max-w-md w-full rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex items-start justify-between gap-2 bg-slate-900/95">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span id="detalhe-badge-modalidade" class="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase"></span>
+                        <span id="detalhe-badge-sync" class="text-[10px] font-mono px-2 py-0.5 rounded-md border"></span>
+                    </div>
+                    <h3 id="detalhe-titulo-pasta" class="text-xs font-extrabold text-white font-mono truncate"></h3>
+                    <p id="detalhe-subtitulo-data" class="text-[11px] text-slate-400"></p>
+                </div>
+                <button type="button" onclick="fecharDetalheCaso()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto space-y-3 flex-1">
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1.5 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[10px] text-slate-500 uppercase font-bold block">Guia / Ofício</span>
+                            <span id="detalhe-guia" class="font-mono text-slate-200"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 uppercase font-bold block">Boletim (BO)</span>
+                            <span id="detalhe-bo" class="font-mono text-slate-200"></span>
+                        </div>
+                    </div>
+                    <div class="pt-1 border-t border-slate-900">
+                        <span class="text-[10px] text-slate-500 uppercase font-bold block">Observações</span>
+                        <span id="detalhe-obs" class="text-slate-300 text-[11px]"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            Vestígios e Documentos Coletados
+                        </span>
+                        <span id="detalhe-qtd-arquivos" class="text-[10px] font-mono text-slate-400"></span>
+                    </div>
+                    <div id="detalhe-grade-arquivos" class="grid grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+
+            <div class="p-3.5 border-t border-slate-800 bg-slate-950/90 space-y-2">
+                <button type="button" id="btn-reenviar-caso" onclick="reenviarCasoAtualParaDrive()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition">
+                    <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                    <span id="lbl-reenviar-caso">Reenviar para Google Drive</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="exportarTodosArquivosCasoAtual()"
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Exportar / Baixar Todos</span>
+                    </button>
+                    <button type="button" onclick="excluirCasoAtual()"
+                        class="bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 font-semibold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
+                        <span>Excluir Registro</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div id="modal-lightbox" class="hidden fixed inset-0 z-[60] bg-black/95 flex flex-col justify-between p-4">
+        <div class="flex items-center justify-between gap-2">
+            <p id="lightbox-titulo" class="text-xs font-mono text-slate-300 truncate"></p>
+            <div class="flex items-center gap-2">
+                <a id="lightbox-download" href="#" download="" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold flex items-center gap-1">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar
+                </a>
+                <button type="button" onclick="fecharLightbox()" class="p-2 rounded-lg bg-slate-800 text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center overflow-auto my-2">
+            <img id="lightbox-img" src="" alt="Visualização em alta resolução" class="max-w-full max-h-[82vh] object-contain rounded-lg">
+        </div>
+        <p class="text-center text-[10px] text-slate-500">Toque em Baixar para guardar o arquivo bruto original.</p>
+    </div>
+
+    <!-- MODAL CONFIG -->
     <div id="modal-config" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-4 shadow-2xl space-y-3">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -209,7 +471,7 @@
                 <input type="url" id="input-drive-url" placeholder="https://script.google.com/macros/s/.../exec"
                     class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
                 <p class="text-[10px] text-slate-500 mt-1">
-                    Cria automaticamente as pastas: AFIS_CAMPO / DD-MM-AAAA / [Caso].
+                    Estrutura no Drive: AFIS_CAMPO / DD-MM-AAAA / [MODALIDADE]_[NOME].
                 </p>
             </div>
             <div class="flex gap-2 pt-1">
@@ -223,16 +485,178 @@
         </div>
     </div>
 
+    <!-- Scripts de Operação -->
     <script>
         let modalidadeAtual = 'CONFRONTO';
         let categoriaAtual = 'GUIA';
         let anexos = [];
+        let promptInstalacao = null;
+        let abaAtiva = 'COLETA';
+        let cacheAtendimentos = [];
+        let casoDetalheAtual = null;
+        let pastasDataAbertas = {};
+
+        let scannerImagemBase = null;
+        let scannerCategoria = 'GUIA';
+        let scannerFiltro = 'PB';
+        let scannerRotacao = 0;
+        let scannerFormato = 'PDF';
+        let scannerCanvasProcessado = null;
+        let scannerIndiceEdicao = null;
+
+        const DB_NAME = 'AFIS_Mobile_DB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'atendimentos';
+
+        // REGISTO SERVICE WORKER PWA NATIVO
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then(reg => console.log('Service Worker ativo:', reg.scope))
+                    .catch(err => console.warn('Falha no Service Worker:', err));
+            });
+        }
+
+        // CAPTURA DO EVENTO DE INSTALAÇÃO
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            promptInstalacao = e;
+            const btnInstalar = document.getElementById('btn-instalar-pwa');
+            if (btnInstalar) btnInstalar.classList.remove('hidden');
+        });
+
+        async function instalarApp() {
+            if (!promptInstalacao) return;
+            promptInstalacao.prompt();
+            const { outcome } = await promptInstalacao.userChoice;
+            if (outcome === 'accepted') {
+                const btn = document.getElementById('btn-instalar-pwa');
+                if (btn) btn.classList.add('hidden');
+            }
+            promptInstalacao = null;
+        }
+
+        function abrirBancoLocal() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        store.createIndex('data', 'data', { unique: false });
+                        store.createIndex('nome', 'nome', { unique: false });
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function salvarRegistroIndexedDB(registro) {
+            const db = await abrirBancoLocal();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.put(registro);
+                tx.oncomplete = () => {
+                    db.close();
+                    resolve(registro);
+                };
+                tx.onerror = (e) => {
+                    db.close();
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        async function listarRegistrosIndexedDB() {
+            const db = await abrirBancoLocal();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    db.close();
+                    const lista = (req.result || []).sort((a, b) => b.id - a.id);
+                    resolve(lista);
+                };
+                req.onerror = (e) => {
+                    db.close();
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        async function removerRegistroIndexedDB(id) {
+            const db = await abrirBancoLocal();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.delete(id);
+                tx.oncomplete = () => {
+                    db.close();
+                    resolve();
+                };
+                tx.onerror = (e) => {
+                    db.close();
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        async function sincronizarCacheHistorico() {
+            try {
+                cacheAtendimentos = await listarRegistrosIndexedDB();
+                const badge = document.getElementById('badge-total-casos');
+                if (badge) badge.innerText = cacheAtendimentos.length;
+                if (abaAtiva === 'HISTORICO') {
+                    renderizarHistorico();
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar IndexedDB:', e);
+            }
+        }
+
+        function atualizarStatusRede() {
+            const banner = document.getElementById('banner-offline');
+            if (!navigator.onLine) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+        window.addEventListener('online', atualizarStatusRede);
+        window.addEventListener('offline', atualizarStatusRede);
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            atualizarStatusRede();
             const urlSalva = localStorage.getItem('afis_drive_webhook_url') || '';
             document.getElementById('input-drive-url').value = urlSalva;
+            sincronizarCacheHistorico();
         });
+
+        function alternarAba(aba) {
+            abaAtiva = aba;
+            const secColeta = document.getElementById('aba-coleta');
+            const secHist = document.getElementById('aba-historico');
+            const btnColeta = document.getElementById('tab-btn-coleta');
+            const btnHist = document.getElementById('tab-btn-historico');
+
+            if (aba === 'COLETA') {
+                secColeta.classList.remove('hidden');
+                secHist.classList.add('hidden');
+                btnColeta.className = "py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white shadow-md shadow-blue-600/25";
+                btnHist.className = "py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-slate-800/80 text-slate-300 border border-slate-700/80 hover:text-white";
+            } else {
+                secColeta.classList.add('hidden');
+                secHist.classList.remove('hidden');
+                btnHist.className = "py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white shadow-md shadow-blue-600/25";
+                btnColeta.className = "py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-slate-800/80 text-slate-300 border border-slate-700/80 hover:text-white";
+                sincronizarCacheHistorico();
+            }
+            lucide.createIcons();
+        }
 
         function selecionarModalidade(tipo) {
             modalidadeAtual = tipo;
@@ -271,19 +695,311 @@
                 .trim();
         }
 
-        function aoProcessarArquivos(input) {
-            if (!input.files || input.files.length === 0) return;
+        function obterDataAtualDDMMAAAA() {
+            const agora = new Date();
+            const dia = String(agora.getDate()).padStart(2, '0');
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const ano = agora.getFullYear();
+            return `${dia}-${mes}-${ano}`;
+        }
 
+        function gerarNomePadronizado(cat, ext, sufixo = '') {
             const nomeIndividuo = sanitizar(document.getElementById('campo-nome').value || 'INDIVIDUO');
             const dataStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             const horaStr = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+            return `${modalidadeAtual}_${nomeIndividuo}_${cat}${sufixo}_${dataStr}_${horaStr}.${ext}`;
+        }
 
-            Array.from(input.files).forEach((origFile, idx) => {
+        function abrirScannerComArquivo(file, cat, indiceExistente = null) {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                scannerImagemBase = img;
+                scannerCategoria = cat;
+                scannerIndiceEdicao = indiceExistente;
+                scannerRotacao = 0;
+
+                if (cat === 'DIGITAL') {
+                    scannerFiltro = 'ORIGINAL';
+                    scannerFormato = 'JPG';
+                } else {
+                    scannerFiltro = 'PB';
+                    scannerFormato = 'PDF';
+                }
+
+                document.getElementById('scanner-subtitulo').innerText = `Categoria: ${cat}`;
+                document.getElementById('modal-scanner').classList.remove('hidden');
+                atualizarBotoesScannerUI();
+                processarImagemScannerAsync();
+                lucide.createIcons();
+            };
+            img.src = url;
+        }
+
+        function abrirScannerDeAnexoExistente(idx) {
+            const item = anexos[idx];
+            if (!item || item.isPdf) return;
+            abrirScannerComArquivo(item.file, item.categoria, idx);
+        }
+
+        function fecharScannerModal() {
+            document.getElementById('modal-scanner').classList.add('hidden');
+            scannerImagemBase = null;
+            scannerCanvasProcessado = null;
+            scannerIndiceEdicao = null;
+        }
+
+        function selecionarFiltroScanner(novoFiltro) {
+            scannerFiltro = novoFiltro;
+            atualizarBotoesScannerUI();
+            processarImagemScannerAsync();
+        }
+
+        function selecionarSaidaScanner(novoFormato) {
+            scannerFormato = novoFormato;
+            atualizarBotoesScannerUI();
+        }
+
+        function rotacionarScanner(deltaGraus) {
+            scannerRotacao = (scannerRotacao + deltaGraus + 360) % 360;
+            processarImagemScannerAsync();
+        }
+
+        function atualizarBotoesScannerUI() {
+            const ativoCls = "py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition bg-blue-600/25 border-blue-500 text-blue-200 shadow-sm";
+            const inativoCls = "py-2 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200";
+
+            document.getElementById('btn-filtro-pb').className = scannerFiltro === 'PB' ? ativoCls : inativoCls;
+            document.getElementById('btn-filtro-cor').className = scannerFiltro === 'COR' ? ativoCls : inativoCls;
+            document.getElementById('btn-filtro-orig').className = scannerFiltro === 'ORIGINAL' ? ativoCls : inativoCls;
+
+            const saidaAtiva = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-emerald-600/20 border-emerald-500 text-emerald-300";
+            const saidaInativa = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200";
+
+            document.getElementById('btn-saida-pdf').className = scannerFormato === 'PDF' ? saidaAtiva : saidaInativa;
+            document.getElementById('btn-saida-jpg').className = scannerFormato === 'JPG' ? saidaAtiva : saidaInativa;
+        }
+
+        function processarImagemScannerAsync() {
+            if (!scannerImagemBase) return;
+            const loading = document.getElementById('scanner-loading');
+            loading.classList.remove('hidden');
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    try {
+                        const img = scannerImagemBase;
+                        const MAX_DIM = 2000;
+                        let w = img.naturalWidth || img.width;
+                        let h = img.naturalHeight || img.height;
+
+                        if (w > MAX_DIM || h > MAX_DIM) {
+                            const escala = MAX_DIM / Math.max(w, h);
+                            w = Math.round(w * escala);
+                            h = Math.round(h * escala);
+                        }
+
+                        const trocouEixos = scannerRotacao === 90 || scannerRotacao === 270;
+                        const canvasW = trocouEixos ? h : w;
+                        const canvasH = trocouEixos ? w : h;
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = canvasW;
+                        canvas.height = canvasH;
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+                        ctx.save();
+                        ctx.translate(canvasW / 2, canvasH / 2);
+                        ctx.rotate((scannerRotacao * Math.PI) / 180);
+                        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+                        ctx.restore();
+
+                        if (scannerFiltro !== 'ORIGINAL') {
+                            aplicarFiltroDocumentoNoCanvas(ctx, canvasW, canvasH, scannerFiltro);
+                        }
+
+                        scannerCanvasProcessado = canvas;
+                        document.getElementById('scanner-preview-img').src = canvas.toDataURL('image/jpeg', 0.88);
+                    } catch (err) {
+                        console.error('Erro no processamento do scanner:', err);
+                    } finally {
+                        loading.classList.add('hidden');
+                    }
+                }, 20);
+            });
+        }
+
+        function aplicarFiltroDocumentoNoCanvas(ctx, width, height, modo) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const totalPixels = width * height;
+
+            const lum = new Uint8Array(totalPixels);
+            const integral = new Float64Array((width + 1) * (height + 1));
+
+            for (let y = 0; y < height; y++) {
+                let somaLinha = 0;
+                const rowOffset = y * width;
+                const intRowOffset = (y + 1) * (width + 1);
+                const prevIntRowOffset = y * (width + 1);
+
+                for (let x = 0; x < width; x++) {
+                    const idx = (rowOffset + x) * 4;
+                    const l = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+                    lum[rowOffset + x] = l;
+                    somaLinha += l;
+                    integral[intRowOffset + x + 1] = integral[prevIntRowOffset + x + 1] + somaLinha;
+                }
+            }
+
+            const raio = Math.max(16, Math.round(Math.min(width, height) / 28));
+
+            for (let y = 0; y < height; y++) {
+                const y1 = Math.max(0, y - raio);
+                const y2 = Math.min(height - 1, y + raio);
+                const rowOffset = y * width;
+
+                for (let x = 0; x < width; x++) {
+                    const x1 = Math.max(0, x - raio);
+                    const x2 = Math.min(width - 1, x + raio);
+                    const area = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+                    const somaLocal =
+                        integral[(y2 + 1) * (width + 1) + (x2 + 1)] -
+                        integral[y1 * (width + 1) + (x2 + 1)] -
+                        integral[(y2 + 1) * (width + 1) + x1] +
+                        integral[y1 * (width + 1) + x1];
+
+                    const mediaFundo = Math.max(1, somaLocal / area);
+                    const pixelIdx = (rowOffset + x) * 4;
+                    const l = lum[rowOffset + x];
+
+                    if (modo === 'PB') {
+                        const razao = l / mediaFundo;
+                        let val;
+                        if (razao > 0.91) {
+                            val = 255;
+                        } else {
+                            val = Math.max(0, Math.min(255, Math.round((razao - 0.52) * 640)));
+                        }
+                        data[pixelIdx] = val;
+                        data[pixelIdx + 1] = val;
+                        data[pixelIdx + 2] = val;
+                    } else if (modo === 'COR') {
+                        const ganho = 250 / Math.max(70, mediaFundo);
+                        let r = Math.min(255, Math.round(data[pixelIdx] * ganho));
+                        let g = Math.min(255, Math.round(data[pixelIdx + 1] * ganho));
+                        let b = Math.min(255, Math.round(data[pixelIdx + 2] * ganho));
+
+                        r = Math.max(0, Math.min(255, Math.round((r - 128) * 1.22 + 135)));
+                        g = Math.max(0, Math.min(255, Math.round((g - 128) * 1.22 + 135)));
+                        b = Math.max(0, Math.min(255, Math.round((b - 128) * 1.22 + 135)));
+
+                        data[pixelIdx] = r;
+                        data[pixelIdx + 1] = g;
+                        data[pixelIdx + 2] = b;
+                    }
+                }
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        async function confirmarEscaneamento() {
+            if (!scannerCanvasProcessado) return;
+            const btn = document.getElementById('btn-confirmar-scanner');
+            const lbl = document.getElementById('lbl-confirmar-scanner');
+            btn.disabled = true;
+            lbl.innerText = 'Gerando arquivo final...';
+
+            try {
+                const canvas = scannerCanvasProcessado;
+                const dataUrlJpg = canvas.toDataURL('image/jpeg', 0.95);
+                let arquivoFinal = null;
+                let nomeFormatado = '';
+                let isPdf = false;
+
+                if (scannerFormato === 'PDF' && window.jspdf && window.jspdf.jsPDF) {
+                    isPdf = true;
+                    nomeFormatado = gerarNomePadronizado(scannerCategoria, 'pdf');
+                    const { jsPDF } = window.jspdf;
+                    const orientacao = canvas.width > canvas.height ? 'l' : 'p';
+                    const pdf = new jsPDF({
+                        orientation: orientacao,
+                        unit: 'mm',
+                        format: 'a4',
+                        compress: true
+                    });
+
+                    const pageW = pdf.internal.pageSize.getWidth();
+                    const pageH = pdf.internal.pageSize.getHeight();
+                    const margem = 6;
+                    const areaW = pageW - margem * 2;
+                    const areaH = pageH - margem * 2;
+
+                    const ratio = Math.min(areaW / canvas.width, areaH / canvas.height);
+                    const imgW = canvas.width * ratio;
+                    const imgH = canvas.height * ratio;
+                    const posX = (pageW - imgW) / 2;
+                    const posY = (pageH - imgH) / 2;
+
+                    pdf.addImage(dataUrlJpg, 'JPEG', posX, posY, imgW, imgH, undefined, 'FAST');
+                    const pdfBlob = pdf.output('blob');
+                    arquivoFinal = new File([pdfBlob], nomeFormatado, { type: 'application/pdf' });
+                } else {
+                    isPdf = false;
+                    nomeFormatado = gerarNomePadronizado(scannerCategoria, 'jpg');
+                    const blob = await (await fetch(dataUrlJpg)).blob();
+                    arquivoFinal = new File([blob], nomeFormatado, { type: 'image/jpeg' });
+                }
+
+                const objUrl = URL.createObjectURL(arquivoFinal);
+                const novoItem = {
+                    id: Date.now() + Math.random(),
+                    file: arquivoFinal,
+                    nomeArquivo: nomeFormatado,
+                    url: objUrl,
+                    previewImgUrl: dataUrlJpg,
+                    categoria: scannerCategoria,
+                    isPdf: isPdf,
+                    tamanhoKb: Math.max(1, Math.round(arquivoFinal.size / 1024)).toString()
+                };
+
+                if (scannerIndiceEdicao !== null && anexos[scannerIndiceEdicao]) {
+                    URL.revokeObjectURL(anexos[scannerIndiceEdicao].url);
+                    anexos[scannerIndiceEdicao] = novoItem;
+                } else {
+                    anexos.push(novoItem);
+                }
+
+                renderizarGaleria();
+                fecharScannerModal();
+            } catch (e) {
+                console.error('Erro ao exportar documento escaneado:', e);
+                alert('Erro ao gerar o documento escaneado.');
+            } finally {
+                btn.disabled = false;
+                lbl.innerText = 'Confirmar Escaneamento';
+            }
+        }
+
+        function aoProcessarArquivos(input, origem = 'GALERIA') {
+            if (!input.files || input.files.length === 0) return;
+
+            const listaFiles = Array.from(input.files);
+            const primeiro = listaFiles[0];
+            const ehImagem = primeiro.type.startsWith('image/');
+            if (ehImagem && (origem === 'CAMERA' || (listaFiles.length === 1 && (categoriaAtual === 'GUIA' || categoriaAtual === 'FICHA_PADRAO')))) {
+                abrirScannerComArquivo(primeiro, categoriaAtual, null);
+                return;
+            }
+
+            listaFiles.forEach((origFile, idx) => {
                 const isPdf = origFile.type === 'application/pdf' || origFile.name.toLowerCase().endsWith('.pdf');
                 const ext = isPdf ? 'pdf' : (origFile.name.split('.').pop() || 'jpg');
-                const sufixoContador = input.files.length > 1 ? `_${idx + 1}` : '';
-                
-                const nomeFormatado = `${modalidadeAtual}_${nomeIndividuo}_${categoriaAtual}${sufixoContador}_${dataStr}_${horaStr}.${ext}`;
+                const sufixoContador = listaFiles.length > 1 ? `_${idx + 1}` : '';
+                const nomeFormatado = gerarNomePadronizado(categoriaAtual, ext, sufixoContador);
 
                 const fileRenomeado = new File([origFile], nomeFormatado, { type: origFile.type });
                 const objUrl = URL.createObjectURL(origFile);
@@ -318,14 +1034,24 @@
             avisoVazio.classList.add('hidden');
             container.innerHTML = anexos.map((item, idx) => `
                 <div class="relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2 flex flex-col justify-between group">
-                    <button onclick="removerAnexo(${idx})" class="absolute top-1.5 right-1.5 bg-red-600/90 text-white p-1 rounded-md active:scale-95 transition z-10">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                    </button>
+                    <div class="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
+                        ${!item.isPdf ? `
+                            <button type="button" onclick="abrirScannerDeAnexoExistente(${idx})" title="Ajustar no Scanner"
+                                class="bg-blue-600/90 text-white p-1 rounded-md active:scale-95 transition">
+                                <i data-lucide="scan-line" class="w-3 h-3"></i>
+                            </button>
+                        ` : ''}
+                        <button type="button" onclick="removerAnexo(${idx})" title="Remover"
+                            class="bg-red-600/90 text-white p-1 rounded-md active:scale-95 transition">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        </button>
+                    </div>
 
                     ${item.isPdf ? `
-                        <div class="h-20 flex flex-col items-center justify-center text-rose-400 bg-rose-950/20 rounded-lg mb-1 border border-rose-900/40">
-                            <i data-lucide="file-check-2" class="w-8 h-8 mb-1"></i>
-                            <span class="text-[9px] font-mono font-bold text-rose-300 uppercase">DOCUMENTO PDF</span>
+                        <div class="h-20 flex flex-col items-center justify-center text-rose-400 bg-rose-950/20 rounded-lg mb-1 border border-rose-900/40 relative overflow-hidden">
+                            ${item.previewImgUrl ? `<img src="${item.previewImgUrl}" class="absolute inset-0 w-full h-full object-cover opacity-25">` : ''}
+                            <i data-lucide="file-check-2" class="w-7 h-7 mb-0.5 relative z-10"></i>
+                            <span class="text-[9px] font-mono font-bold text-rose-300 uppercase relative z-10">PDF ESCANEADO</span>
                         </div>
                     ` : `
                         <div class="h-20 overflow-hidden rounded-lg mb-1 bg-black">
@@ -366,6 +1092,68 @@
             });
         }
 
+        async function montarRegistroAtendimento(enviadoDriveStatus) {
+            const nome = document.getElementById('campo-nome').value.trim().toUpperCase();
+            const guia = document.getElementById('campo-guia').value.trim() || 'S/N';
+            const bo = document.getElementById('campo-bo').value.trim() || 'S/N';
+            const obs = document.getElementById('campo-obs').value.trim() || 'Sem observações';
+
+            const listaArquivos = [];
+            for (const item of anexos) {
+                const b64 = await fileToBase64(item.file);
+                listaArquivos.push({
+                    nome: item.nomeArquivo,
+                    mimeType: item.file.type || (item.isPdf ? 'application/pdf' : 'image/jpeg'),
+                    base64: b64,
+                    categoria: item.categoria,
+                    tamanhoKb: item.tamanhoKb
+                });
+            }
+
+            return {
+                id: Date.now(),
+                data: obterDataAtualDDMMAAAA(),
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                modalidade: modalidadeAtual,
+                nome: nome,
+                nomeCaso: sanitizar(nome),
+                guia: guia,
+                bo: bo,
+                obs: obs,
+                arquivos: listaArquivos,
+                enviadoDrive: Boolean(enviadoDriveStatus)
+            };
+        }
+
+        async function salvarAtendimentoApenasLocal() {
+            const nome = document.getElementById('campo-nome').value.trim();
+            if (!nome) {
+                alert('Informe o nome do periciando / cadáver.');
+                document.getElementById('campo-nome').focus();
+                return;
+            }
+            if (anexos.length === 0) {
+                alert('Adicione ao menos uma foto ou documento em PDF.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-salvar-local');
+            btn.disabled = true;
+
+            try {
+                const registro = await montarRegistroAtendimento(false);
+                await salvarRegistroIndexedDB(registro);
+                await sincronizarCacheHistorico();
+                alert('📁 Atendimento salvo na memória do aparelho!\nConsulte a aba "Histórico / Pastas".');
+                limparTudo();
+            } catch (e) {
+                console.error(e);
+                alert('Erro ao salvar registro no armazenamento local.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         async function enviarParaGoogleDrive() {
             const webhookUrl = localStorage.getItem('afis_drive_webhook_url');
             if (!webhookUrl) {
@@ -389,31 +1177,26 @@
             const btn = document.getElementById('btn-enviar-drive');
             const lbl = document.getElementById('label-btn-drive');
             btn.disabled = true;
-            lbl.innerText = 'Enviando para o Google Drive...';
+            lbl.innerText = 'Salvando e enviando ao Drive...';
+
+            let registroSalvo = null;
 
             try {
-                const listaArquivosPayload = [];
-                for (const item of anexos) {
-                    const b64 = await fileToBase64(item.file);
-                    listaArquivosPayload.push({
-                        nome: item.nomeArquivo,
-                        mimeType: item.file.type || (item.isPdf ? 'application/pdf' : 'image/jpeg'),
-                        base64: b64
-                    });
-                }
+                registroSalvo = await montarRegistroAtendimento(false);
+                await salvarRegistroIndexedDB(registroSalvo);
 
-                const guia = document.getElementById('campo-guia').value.trim() || 'S/N';
-                const bo = document.getElementById('campo-bo').value.trim() || 'S/N';
-                const obs = document.getElementById('campo-obs').value.trim() || 'Sem observações';
                 const dataHora = new Date().toLocaleString('pt-BR');
-
-                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${modalidadeAtual}\nPericiando/Cadáver: ${nome.toUpperCase()}\nGuia/Ofício: ${guia}\nBoletim de Ocorrência (BO): ${bo}\nData/Hora Coleta: ${dataHora}\nObservações: ${obs}\nTotal de Arquivos: ${anexos.length}`;
+                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${registroSalvo.modalidade}\nPericiando/Cadáver: ${registroSalvo.nome}\nGuia/Ofício: ${registroSalvo.guia}\nBoletim de Ocorrência (BO): ${registroSalvo.bo}\nData/Hora Coleta: ${dataHora}\nObservações: ${registroSalvo.obs}\nTotal de Arquivos: ${registroSalvo.arquivos.length}`;
 
                 const payload = {
-                    modalidade: modalidadeAtual,
-                    nomeCaso: sanitizar(nome),
+                    modalidade: registroSalvo.modalidade,
+                    nomeCaso: registroSalvo.nomeCaso || sanitizar(registroSalvo.nome),
                     metadados: metadadosTexto,
-                    arquivos: listaArquivosPayload
+                    arquivos: registroSalvo.arquivos.map(a => ({
+                        nome: a.nome,
+                        mimeType: a.mimeType,
+                        base64: a.base64
+                    }))
                 };
 
                 await fetch(webhookUrl, {
@@ -423,16 +1206,330 @@
                     body: JSON.stringify(payload)
                 });
 
-                alert('✅ Envio concluído com sucesso!\nVerifique a pasta "AFIS_CAMPO" no seu Google Drive.');
+                registroSalvo.enviadoDrive = true;
+                await salvarRegistroIndexedDB(registroSalvo);
+                await sincronizarCacheHistorico();
+
+                alert('✅ Envio concluído e cópia arquivada no aparelho!\nVerifique a pasta "AFIS_CAMPO" no seu Google Drive.');
                 limparTudo();
 
             } catch (err) {
                 console.error(err);
-                alert('Falha na comunicação com o Google Drive. Verifique a URL do Web App ou sua conexão.');
+                await sincronizarCacheHistorico();
+                alert('⚠️ Sem conexão com o Google Drive no momento.\nO atendimento foi salvo integralmente em "Histórico / Pastas" para reenvio posterior.');
+                limparTudo();
             } finally {
                 btn.disabled = false;
                 lbl.innerText = 'Enviar Direto para meu Google Drive';
             }
+        }
+
+        function converterInputDateParaDDMMAAAA(isoDate) {
+            if (!isoDate) return '';
+            const partes = isoDate.split('-');
+            if (partes.length !== 3) return '';
+            return `${partes[2]}-${partes[1]}-${partes[0]}`;
+        }
+
+        function filtrarHoje() {
+            const agora = new Date();
+            const yyyy = agora.getFullYear();
+            const mm = String(agora.getMonth() + 1).padStart(2, '0');
+            const dd = String(agora.getDate()).padStart(2, '0');
+            document.getElementById('filtro-data').value = `${yyyy}-${mm}-${dd}`;
+            renderizarHistorico();
+        }
+
+        function limparFiltrosHistorico() {
+            document.getElementById('filtro-texto').value = '';
+            document.getElementById('filtro-data').value = '';
+            renderizarHistorico();
+        }
+
+        function alternarPastaData(dataStr) {
+            pastasDataAbertas[dataStr] = pastasDataAbertas[dataStr] === false ? true : false;
+            renderizarHistorico();
+        }
+
+        function renderizarHistorico() {
+            const termo = (document.getElementById('filtro-texto')?.value || '').trim().toUpperCase();
+            const dataIso = document.getElementById('filtro-data')?.value || '';
+            const dataFiltro = converterInputDateParaDDMMAAAA(dataIso);
+
+            const container = document.getElementById('arvore-pastas');
+            const vazio = document.getElementById('historico-vazio');
+
+            const filtrados = cacheAtendimentos.filter(item => {
+                const bateData = !dataFiltro || item.data === dataFiltro;
+                const bateTexto = !termo ||
+                    (item.nome && item.nome.toUpperCase().includes(termo)) ||
+                    (item.guia && item.guia.toUpperCase().includes(termo)) ||
+                    (item.bo && item.bo.toUpperCase().includes(termo));
+                return bateData && bateTexto;
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = '';
+                vazio.classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            vazio.classList.add('hidden');
+
+            const grupos = {};
+            filtrados.forEach(item => {
+                if (!grupos[item.data]) grupos[item.data] = [];
+                grupos[item.data].push(item);
+            });
+
+            const datasOrdenadas = Object.keys(grupos);
+
+            container.innerHTML = datasOrdenadas.map(dataKey => {
+                const casosDia = grupos[dataKey];
+                const aberta = pastasDataAbertas[dataKey] !== false;
+
+                const cartoesCasosHtml = casosDia.map(caso => {
+                    const pastaNome = `${caso.modalidade}_${caso.nomeCaso || sanitizar(caso.nome)}`;
+                    const qtdArq = (caso.arquivos || []).length;
+                    const corMod = caso.modalidade === 'NECRO'
+                        ? 'text-red-300 bg-red-500/15 border-red-500/30'
+                        : 'text-blue-300 bg-blue-500/15 border-blue-500/30';
+                    const badgeSync = caso.enviadoDrive
+                        ? '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Drive OK</span>'
+                        : '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Local</span>';
+
+                    return `
+                        <button type="button" onclick="abrirDetalheCaso(${caso.id})"
+                            class="w-full text-left bg-slate-950 hover:bg-slate-900/90 border border-slate-800/90 rounded-xl p-2.5 flex items-center justify-between gap-2 transition active:scale-[0.99]">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="folder" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold font-mono text-slate-100 truncate">${pastaNome}</p>
+                                    <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                        <span class="px-1.5 py-0.2 rounded border text-[9px] font-bold ${corMod}">${caso.modalidade}</span>
+                                        <span>Guia: ${caso.guia || 'S/N'}</span>
+                                        <span>·</span>
+                                        <span>${qtdArq} arq.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                                ${badgeSync}
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                            </div>
+                        </button>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                        <button type="button" onclick="alternarPastaData('${dataKey}')"
+                            class="w-full px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800/60 flex items-center justify-between text-left transition">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="${aberta ? 'folder-open' : 'folder'}" class="w-4 h-4 text-amber-400"></i>
+                                <span class="text-xs font-extrabold font-mono text-slate-200">${dataKey}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+                                    ${casosDia.length} caso(s)
+                                </span>
+                                <i data-lucide="${aberta ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4 text-slate-400"></i>
+                            </div>
+                        </button>
+                        ${aberta ? `<div class="p-2.5 pt-1 space-y-2 border-t border-slate-800/60">${cartoesCasosHtml}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function abrirDetalheCaso(id) {
+            const caso = cacheAtendimentos.find(c => c.id === id);
+            if (!caso) return;
+            casoDetalheAtual = caso;
+
+            const pastaNome = `${caso.modalidade}_${caso.nomeCaso || sanitizar(caso.nome)}`;
+            document.getElementById('detalhe-titulo-pasta').innerText = pastaNome;
+            document.getElementById('detalhe-subtitulo-data').innerText = `Data: ${caso.data}${caso.hora ? ' às ' + caso.hora : ''} · Periciando: ${caso.nome}`;
+            document.getElementById('detalhe-guia').innerText = caso.guia || 'S/N';
+            document.getElementById('detalhe-bo').innerText = caso.bo || 'S/N';
+            document.getElementById('detalhe-obs').innerText = caso.obs || 'Sem observações';
+            document.getElementById('detalhe-qtd-arquivos').innerText = `${(caso.arquivos || []).length} ficheiro(s)`;
+
+            const badgeMod = document.getElementById('detalhe-badge-modalidade');
+            badgeMod.innerText = caso.modalidade;
+            badgeMod.className = caso.modalidade === 'NECRO'
+                ? 'text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-red-500/20 text-red-300 border border-red-500/40'
+                : 'text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40';
+
+            const badgeSync = document.getElementById('detalhe-badge-sync');
+            badgeSync.innerText = caso.enviadoDrive ? 'Sincronizado Drive' : 'Salvo no Aparelho';
+            badgeSync.className = caso.enviadoDrive
+                ? 'text-[10px] font-mono px-2 py-0.5 rounded-md border bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                : 'text-[10px] font-mono px-2 py-0.5 rounded-md border bg-amber-500/15 text-amber-300 border-amber-500/30';
+
+            const grade = document.getElementById('detalhe-grade-arquivos');
+            grade.innerHTML = (caso.arquivos || []).map((arq, idx) => {
+                const isPdf = arq.mimeType === 'application/pdf' || (arq.nome && arq.nome.toLowerCase().endsWith('.pdf'));
+                const dataUri = `data:${arq.mimeType || (isPdf ? 'application/pdf' : 'image/jpeg')};base64,${arq.base64}`;
+
+                return `
+                    <div onclick="abrirArquivoDoCaso(${idx})"
+                        class="cursor-pointer bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl p-2 flex flex-col justify-between transition active:scale-95">
+                        ${isPdf ? `
+                            <div class="h-24 flex flex-col items-center justify-center text-rose-400 bg-rose-950/20 rounded-lg mb-1.5 border border-rose-900/40">
+                                <i data-lucide="file-text" class="w-8 h-8 mb-1"></i>
+                                <span class="text-[9px] font-mono font-bold text-rose-300 uppercase">ABRIR PDF</span>
+                            </div>
+                        ` : `
+                            <div class="h-24 overflow-hidden rounded-lg mb-1.5 bg-black">
+                                <img src="${dataUri}" class="w-full h-full object-cover" alt="${arq.nome}">
+                            </div>
+                        `}
+                        <div>
+                            <div class="flex items-center justify-between text-[9px] mb-0.5">
+                                <span class="font-bold text-blue-400 font-mono">${arq.categoria || 'ARQUIVO'}</span>
+                                <span class="text-slate-500">${arq.tamanhoKb ? arq.tamanhoKb + ' KB' : ''}</span>
+                            </div>
+                            <p class="text-[9px] text-slate-300 font-mono truncate" title="${arq.nome}">${arq.nome}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('modal-detalhe-caso').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function fecharDetalheCaso() {
+            document.getElementById('modal-detalhe-caso').classList.add('hidden');
+            casoDetalheAtual = null;
+        }
+
+        function base64ParaBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                const slice = byteCharacters.slice(offset, offset + 512);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                byteArrays.push(new Uint8Array(byteNumbers));
+            }
+            return new Blob(byteArrays, { type: mimeType });
+        }
+
+        function abrirArquivoDoCaso(idx) {
+            if (!casoDetalheAtual || !casoDetalheAtual.arquivos[idx]) return;
+            const arq = casoDetalheAtual.arquivos[idx];
+            const isPdf = arq.mimeType === 'application/pdf' || (arq.nome && arq.nome.toLowerCase().endsWith('.pdf'));
+
+            if (isPdf) {
+                const blob = base64ParaBlob(arq.base64, 'application/pdf');
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            } else {
+                const dataUri = `data:${arq.mimeType || 'image/jpeg'};base64,${arq.base64}`;
+                document.getElementById('lightbox-img').src = dataUri;
+                document.getElementById('lightbox-titulo').innerText = arq.nome;
+                const dl = document.getElementById('lightbox-download');
+                dl.href = dataUri;
+                dl.download = arq.nome;
+                document.getElementById('modal-lightbox').classList.remove('hidden');
+            }
+        }
+
+        function fecharLightbox() {
+            document.getElementById('modal-lightbox').classList.add('hidden');
+            document.getElementById('lightbox-img').src = '';
+        }
+
+        async function reenviarCasoAtualParaDrive() {
+            if (!casoDetalheAtual) return;
+            const webhookUrl = localStorage.getItem('afis_drive_webhook_url');
+            if (!webhookUrl) {
+                abrirConfig();
+                alert('Configure primeiro a URL do seu Google Apps Script na engrenagem.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-reenviar-caso');
+            const lbl = document.getElementById('lbl-reenviar-caso');
+            btn.disabled = true;
+            lbl.innerText = 'Reenviando para o Google Drive...';
+
+            try {
+                const c = casoDetalheAtual;
+                const metadadosTexto = `ATENDIMENTO PERICIAL DE CAMPO:\nModalidade: ${c.modalidade}\nPericiando/Cadáver: ${c.nome}\nGuia/Ofício: ${c.guia}\nBoletim de Ocorrência (BO): ${c.bo}\nData Coleta: ${c.data} ${c.hora || ''}\nObservações: ${c.obs}\nTotal de Arquivos: ${(c.arquivos || []).length}`;
+
+                const payload = {
+                    modalidade: c.modalidade,
+                    nomeCaso: c.nomeCaso || sanitizar(c.nome),
+                    metadados: metadadosTexto,
+                    arquivos: (c.arquivos || []).map(a => ({
+                        nome: a.nome,
+                        mimeType: a.mimeType,
+                        base64: a.base64
+                    }))
+                };
+
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                c.enviadoDrive = true;
+                await salvarRegistroIndexedDB(c);
+                await sincronizarCacheHistorico();
+                abrirDetalheCaso(c.id);
+                alert('✅ Atendimento reenviado com sucesso para o Google Drive!');
+            } catch (e) {
+                console.error(e);
+                alert('Falha ao reenviar para o Google Drive. Verifique sua conexão.');
+            } finally {
+                btn.disabled = false;
+                lbl.innerText = 'Reenviar para Google Drive';
+            }
+        }
+
+        function exportarTodosArquivosCasoAtual() {
+            if (!casoDetalheAtual) return;
+            const arquivos = casoDetalheAtual.arquivos || [];
+            arquivos.forEach((arq, i) => {
+                setTimeout(() => {
+                    const blob = base64ParaBlob(arq.base64, arq.mimeType || 'application/octet-stream');
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = arq.nome;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 15000);
+                }, i * 250);
+            });
+        }
+
+        async function excluirCasoAtual() {
+            if (!casoDetalheAtual) return;
+            const confirmar = confirm(`Deseja excluir permanentemente o registro local de "${casoDetalheAtual.nome}"?`);
+            if (!confirmar) return;
+
+            await removerRegistroIndexedDB(casoDetalheAtual.id);
+            fecharDetalheCaso();
+            await sincronizarCacheHistorico();
         }
 
         async function enviarCompartilhamentoNativo() {
@@ -493,13 +1590,6 @@
             document.getElementById('campo-bo').value = '';
             document.getElementById('campo-obs').value = '';
             renderizarGaleria();
-        }
-
-        // Registo do Service Worker para PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(console.warn);
-            });
         }
     </script>
 </body>
